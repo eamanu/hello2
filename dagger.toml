@@ -1,0 +1,15 @@
+[modules.uv]
+source = "dagger.io/python/uv"
+
+[modules.python-sdk]
+source = "github.com/dagger/python-sdk"
+
+[sdks.python]
+module = "python-sdk"
+
+[modules.ci]
+source = ".dagger/modules/ci"
+
+[sdks.python.scopes.".dagger/modules/ci"]
+is-module = true
+name = "ci"
