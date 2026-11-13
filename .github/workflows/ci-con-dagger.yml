@@ -1,0 +1,25 @@
+# CI con Dagger: el YAML solo instala Dagger y llama a `dagger check`.
+# - La lógica (lint, tests, lockfile, audit) vive en código Python
+#   (.dagger/modules/ci) y en módulos reutilizables (uv, python-sdk).
+# - Corre en contenedores: el mismo comando da el mismo resultado en tu laptop
+#   (`dagger check`) y en CI. Cambiar de GitHub a GitLab/Jenkins = cambiar 2 líneas.
+# - Los checks corren en paralelo y con caché por operación del motor de Dagger.
+name: CI (con Dagger)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: dagger check
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          version: "v1.0.0-beta.24"
+          verb: check

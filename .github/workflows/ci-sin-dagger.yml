@@ -1,0 +1,87 @@
+# CI "tradicional": cada paso está descrito en YAML específico de GitHub Actions.
+# - La lógica vive acá y solo corre en GitHub (no se puede reproducir igual en local).
+# - Hay que mantener a mano versiones de Python, uv, caché y la instalación de deps.
+# - Cada job repite el mismo setup.
+name: CI (sin Dagger)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.13"
+  UV_VERSION: "0.12.x"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Instalar Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Instalar dependencias
+        run: uv sync --locked --all-groups
+
+      - name: Ruff
+        run: uv run ruff check .
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Instalar Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Instalar dependencias
+        run: uv sync --locked --all-groups
+
+      - name: Pytest
+        run: uv run pytest
+
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Verificar que uv.lock esté actualizado
+        run: uv lock --check
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Exportar dependencias
+        run: uv export --locked --all-groups --no-hashes --no-emit-project > requirements.txt
+
+      - name: Auditar vulnerabilidades
+        run: uvx pip-audit -r requirements.txt
